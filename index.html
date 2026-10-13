@@ -444,7 +444,7 @@
       <div class="step" data-step="voting">
         <div class="num">2</div>
         <h3>Campaign &amp; vote</h3>
-                <p id="step-vote-p">Once nominations close, candidates are listed below and voting opens &mdash; one vote per student, per position.</p>
+                <p id="step-vote-p">Once nominations close, candidates are listed below and voting opens &mdash; one vote per student, vote in your constituency only.</p>
       </div>
       <div class="step" data-step="results">
         <div class="num">3</div>
@@ -499,7 +499,7 @@
 
   <section class="block" id="vote">
     <h2>Vote</h2>
-    <div class="block-note">One vote per student, per position.</div>
+    <div class="block-note">One vote per student, vote in your constituency only.</div>
     <div id="vote-body">
       <div class="empty-note" id="vote-empty">Voting isn't open yet.</div>
     </div>
@@ -738,11 +738,11 @@
 
     var stepVote = document.getElementById("step-vote-p");
     if (s.voting_opens_at && s.voting_closes_at) {
-      stepVote.textContent = "Candidates are listed below once nominations close. Voting runs from " + fmtDate(s.voting_opens_at) + " to " + fmtDate(s.voting_closes_at) + " — one vote per student, per position.";
+      stepVote.textContent = "Candidates are listed below once nominations close. Voting runs from " + fmtDate(s.voting_opens_at) + " to " + fmtDate(s.voting_closes_at) + " — one vote per student, vote in your constituency only.";
     } else if (s.voting_opens_at) {
-      stepVote.textContent = "Candidates are listed below once nominations close. Voting opens " + fmtDate(s.voting_opens_at) + " — one vote per student, per position.";
+      stepVote.textContent = "Candidates are listed below once nominations close. Voting opens " + fmtDate(s.voting_opens_at) + " — one vote per student, vote in your constituency only.";
     } else if (s.voting_closes_at) {
-      stepVote.textContent = "Candidates are listed below once nominations close. Voting closes " + fmtDate(s.voting_closes_at) + " — one vote per student, per position.";
+      stepVote.textContent = "Candidates are listed below once nominations close. Voting closes " + fmtDate(s.voting_closes_at) + " — one vote per student, vote in your constituency only.";
     }
   }
 
