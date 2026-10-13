@@ -773,11 +773,19 @@
   function renderDirectory() {
     var body = document.getElementById("candidates-body");
     if (candidatesCache.length === 0) return; // keep the empty-note
-    document.getElementById("candidates-empty").hidden = true;
 
+    var appended = false;
     POSITIONS.forEach(function (p) {
       var group = candidatesCache.filter(function (c) { return c.position === p.key && c.name !== RON_NAME; });
       if (group.length === 0) return;
+
+      // Once a position has a winner marked, it's resolved — the
+      // Results section covers it, so drop it from this list instead
+      // of leaving a stale candidate roster sitting here forever.
+      var decided = candidatesCache.some(function (c) { return c.position === p.key && c.winner; });
+      if (decided) return;
+
+      appended = true;
 
       var wrap = document.createElement("div");
       wrap.className = "posgroup";
@@ -793,6 +801,14 @@
       wrap.appendChild(dir);
       body.appendChild(wrap);
     });
+
+    var emptyNote = document.getElementById("candidates-empty");
+    if (appended) {
+      emptyNote.hidden = true;
+    } else {
+      emptyNote.textContent = "All positions have been decided — see Results below.";
+      emptyNote.hidden = false;
+    }
   }
 
   // ---------------------------------------------------------------
