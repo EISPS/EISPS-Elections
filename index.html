@@ -649,17 +649,21 @@
 
   function renderPhase(s) {
     var phase = s.phase || "nominations";
-    // "Reopen" fields let you re-run nominate→vote for just one or two
-    // positions (a RON win, a tie needing a runoff, or an uncontested
-    // one with no candidates) without disturbing the rest of the
-    // already-decided results. reopen_phase is 'none' / 'nominations' /
-    // 'voting'; reopened_positions is which position(s); reopened_
-    // candidate_ids optionally restricts voting to specific candidates
-    // (e.g. just the two tied finalists) — leave it empty to allow any
-    // approved candidate for that position, plus RON as always.
-    var reopenPhase = s.reopen_phase || "none";
-    var reopened = s.reopened_positions || [];
-    var reopenedCandidateIds = s.reopened_candidate_ids || [];
+    // "reopened" lets you re-run nominate→vote for individual positions
+    // (a RON win, a tie needing a runoff, an uncontested one with no
+    // candidates) without disturbing the rest of the already-decided
+    // results — and, importantly, each position tracks its own stage
+    // independently, so one can be back in "nominations" while another
+    // is already in "voting" at the same time. Shape:
+    //   { "<position key>": { phase: "nominations" | "voting", candidate_ids: [...] } }
+    // candidate_ids is optional — set it to restrict a reopened vote to
+    // specific candidates (e.g. just the two tied finalists); leave it
+    // out/empty to allow any approved candidate for that position, plus
+    // RON as always.
+    var reopened = s.reopened || {};
+    var reopenedKeys = Object.keys(reopened);
+    var reopenedNomKeys = reopenedKeys.filter(function (k) { return reopened[k].phase === "nominations"; });
+    var reopenedVoteKeys = reopenedKeys.filter(function (k) { return reopened[k].phase === "voting"; });
 
     if (phase === "nominations") {
       setStage("nominations", "Nominations open" + (s.nominations_close_at ? " — closes " + fmtDate(s.nominations_close_at) : ""));
@@ -668,11 +672,11 @@
       document.getElementById("nominate-note").textContent = s.nominations_close_at
         ? "Open to all EISPS students, until " + fmtDate(s.nominations_close_at) + " — you'll need your UCL email address."
         : "Open to all EISPS students — you'll need your UCL email address.";
-    } else if (reopenPhase === "nominations" && reopened.length > 0) {
+    } else if (reopenedNomKeys.length > 0) {
       document.getElementById("nominate-form-wrap").hidden = false;
-      rebuildPositionDropdown(reopened);
+      rebuildPositionDropdown(reopenedNomKeys);
       document.getElementById("nominate-note").textContent =
-        "Nominations have reopened for: " + reopened.join(", ") + " — you'll need your UCL email address.";
+        "Nominations have reopened for: " + reopenedNomKeys.join(", ") + " — you'll need your UCL email address.";
     } else {
       document.getElementById("nominate-note").textContent = s.nominations_close_at
         ? "Nominations closed " + fmtDate(s.nominations_close_at) + "."
@@ -683,15 +687,15 @@
     if (phase === "voting") {
       setStage("voting", "Voting open" + (s.voting_closes_at ? " — closes " + fmtDate(s.voting_closes_at) : ""));
       document.getElementById("vote-empty").textContent = "Voting isn't open yet.";
-      loadCandidates({ positions: null, candidateIds: null }, false);
+      loadCandidates({ positions: null, reopenedMap: null }, false);
     } else if (phase === "results") {
-      var reopenVoting = reopenPhase === "voting" && reopened.length > 0;
-      setStage("results", reopenPhase === "none" ? "Voting closed" : "Voting closed — some positions still in progress");
+      var reopenVoting = reopenedVoteKeys.length > 0;
+      setStage("results", reopenedKeys.length === 0 ? "Voting closed" : "Voting closed — some positions still in progress");
       document.getElementById("vote-empty").textContent = reopenVoting
         ? "No candidates yet for the reopened position(s)."
         : "Voting has closed.";
       loadCandidates(
-        reopenVoting ? { positions: reopened, candidateIds: reopenedCandidateIds.length ? reopenedCandidateIds : null } : null,
+        reopenVoting ? { positions: reopenedVoteKeys, reopenedMap: reopened } : null,
         true
       );
     } else {
@@ -748,7 +752,7 @@
       }
       candidatesCache = res.data || [];
       renderDirectory();
-      if (voteOptions) loadVoteForm(voteOptions.positions, voteOptions.candidateIds);
+      if (voteOptions) loadVoteForm(voteOptions.positions, voteOptions.reopenedMap);
       if (forResults) renderResults();
     }).catch(function (err) {
       console.error("loading candidates failed:", err);
@@ -839,7 +843,7 @@
   // Voting form: one group per position with candidates, shared
   // email field
   // ---------------------------------------------------------------
-  function loadVoteForm(allowedPositions, allowedCandidateIds) {
+  function loadVoteForm(allowedPositions, reopenedMap) {
     var body = document.getElementById("vote-body");
     var positionsWithCandidates = POSITIONS.filter(function (p) {
       if (allowedPositions && allowedPositions.indexOf(p.key) === -1) return false;
@@ -877,10 +881,11 @@
     });
 
     positionsWithCandidates.forEach(function (p) {
+      var restriction = reopenedMap && reopenedMap[p.key] && reopenedMap[p.key].candidate_ids;
       var group = candidatesCache.filter(function (c) {
         if (c.position !== p.key) return false;
-        if (allowedCandidateIds && allowedCandidateIds.length > 0) {
-          return c.name === RON_NAME || allowedCandidateIds.indexOf(c.id) !== -1;
+        if (restriction && restriction.length > 0) {
+          return c.name === RON_NAME || restriction.indexOf(c.id) !== -1;
         }
         return true;
       });
