@@ -375,6 +375,7 @@
     font-size: 15px;
     color: var(--text-soft);
     white-space: pre-wrap;
+    margin-bottom: 14px;
   }
 
   .rail-foot {
@@ -423,7 +424,7 @@
     <div class="stage-banner" id="stage-banner"><span class="dot"></span><span id="stage-banner-text">Loading&hellip;</span></div>
     <div class="eyebrow">EISPS &middot; Student Representatives</div>
     <h1>Stand, or have your say</h1>
-    <p class="lede">Every year, EISPS students elect representatives to speak for their year group at the Student Partnership Committee and beyond &mdash; raising issues, feeding back on modules, and helping shape how the department runs.</p>
+    <p class="lede">Every year, EISPS students elect representatives to speak for their year group at Student Partnership Committee and beyond &mdash; raising issues, feeding back on modules, and helping shape how the department runs.</p>
     <div class="hero-actions">
       <a class="btn btn-primary" href="#nominate">Nominate yourself &darr;</a>
       <a class="btn btn-ghost" href="#positions">See the positions</a>
@@ -443,7 +444,7 @@
       <div class="step" data-step="voting">
         <div class="num">2</div>
         <h3>Campaign &amp; vote</h3>
-                <p id="step-vote-p">Once nominations close, candidates are listed below and voting opens &mdash; one vote per student.</p>
+                <p id="step-vote-p">Once nominations close, candidates are listed below and voting opens &mdash; one vote per student, per position.</p>
       </div>
       <div class="step" data-step="results">
         <div class="num">3</div>
@@ -497,7 +498,7 @@
 
   <section class="block" id="vote">
     <h2>Vote</h2>
-    <div class="block-note">One vote per student.</div>
+    <div class="block-note">One vote per student, per position.</div>
     <div id="vote-body">
       <div class="empty-note" id="vote-empty">Voting isn't open yet.</div>
     </div>
@@ -518,6 +519,7 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/heic2any/dist/heic2any.min.js"></script>
 <script>
 (function () {
 
@@ -528,16 +530,16 @@
   var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh0emp3am52dWtsbXFoZmNvbWh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAzMzExOTEsImV4cCI6MjEwNTkwNzE5MX0.MrlGqWGz7hR2dI8OC8GF8NKDL_bBuNEO9I-yF9mTawU";
 
   var POSITIONS = [
-    { key: "Year 1 ESPS Representative", desc: "Represents first-year ESPS students on matters of teaching, welfare, and induction." },
-    { key: "Year 1 ISPS Representative", desc: "Represents first-year ISPS students on matters of teaching, welfare, and induction." },
-    { key: "Year 2 ESPS Representative", desc: "Represents second-year ESPS students, including regarding the year abroad." },
-    { key: "Year 2 ISPS Representative", desc: "Represents second-year ISPS students, including regarding the year abroad." },
+    { key: "Year 1 ESPS Representative", desc: "Speaks for first-year ESPS students on matters of teaching, welfare, and induction." },
+    { key: "Year 1 ISPS Representative", desc: "Speaks for first-year ISPS students on matters of teaching, welfare, and induction." },
+    { key: "Year 2 ESPS Representative", desc: "Speaks for second-year ESPS students, including regarding the year abroad." },
+    { key: "Year 2 ISPS Representative", desc: "Speaks for second-year ISPS students, including regarding the year abroad." },
     { key: "Year 3 ESPS Dual Degree Representative", desc: "Represents third-year ESPS Dual Degree students who have just moved to UCL." },
     { key: "Year 3 SPS Representative", desc: "Represents third-year students who did not complete a year abroad." },
-    { key: "Year 4 ESPS Representative", desc: "Represents final-year ESPS students, including regarding dissertations, assessment, and graduation." },
-    { key: "Year 4 ISPS Representative", desc: "Represents final-year ISPS students, including regarding dissertations, assessment, and graduation." },
-    { key: "Year 4 ESPS Dual Degree Representative", desc: "Represents final-year ESPS Dual Degree students, including regarding dissertations, assessment, and graduation." },
-    { key: "Affiliate Student Ambassador", desc: "An informal position to speak for exchange and visiting students at EISPS for the duration of their time at UCL." }
+    { key: "Year 4 ESPS Representative", desc: "Speaks for final-year ESPS students, including regarding dissertations, assessment, and graduation." },
+    { key: "Year 4 ISPS Representative", desc: "Speaks for final-year ISPS students, including regarding dissertations, assessment, and graduation." },
+    { key: "Year 4 ESPS Dual Degree Representative", desc: "Speaks for final-year ESPS Dual Degree students, including regarding dissertations, assessment, and graduation." },
+    { key: "Affiliate Student Ambassador", desc: "An informal point of contact and welcome for exchange and visiting students at EISPS for the duration of their time at UCL." }
   ];
 
   var UCL_EMAIL_RE = /^[A-Za-z0-9._%+-]+@(ucl\.ac\.uk|live\.ucl\.ac\.uk)$/i;
@@ -558,12 +560,22 @@
     card.querySelector(".postitle").textContent = p.key;
     card.querySelector(".posdesc").textContent = p.desc;
     posgrid.appendChild(card);
-
-    var opt = document.createElement("option");
-    opt.value = p.key;
-    opt.textContent = p.key;
-    nPosition.appendChild(opt);
   });
+
+  // Rebuilds the nomination dropdown. Pass an array to restrict it to
+  // just those positions (used when re-opening nominations for one or
+  // two positions only, e.g. after a RON win); pass null for the full list.
+  function rebuildPositionDropdown(allowedKeys) {
+    nPosition.innerHTML = "";
+    POSITIONS.forEach(function (p) {
+      if (allowedKeys && allowedKeys.indexOf(p.key) === -1) return;
+      var opt = document.createElement("option");
+      opt.value = p.key;
+      opt.textContent = p.key;
+      nPosition.appendChild(opt);
+    });
+  }
+  rebuildPositionDropdown(null);
 
   if (!configured) {
     setStage("nominations", "Set up Supabase to go live");
@@ -598,6 +610,25 @@
     return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
   }
 
+  // iPhones default to saving photos as HEIC, which most browsers (and
+  // the <img> tag) can't display. If the chosen file looks like HEIC,
+  // convert it to a normal JPEG in the browser before it's uploaded —
+  // the person nominating never has to know or do anything differently.
+  function normalizePhotoFile(file) {
+    var isHeic = /\.hei[cf]$/i.test(file.name) || file.type === "image/heic" || file.type === "image/heif";
+    if (!isHeic || typeof heic2any === "undefined") {
+      return Promise.resolve(file);
+    }
+    return heic2any({ blob: file, toType: "image/jpeg", quality: 0.85 }).then(function (converted) {
+      var blob = Array.isArray(converted) ? converted[0] : converted;
+      var newName = file.name.replace(/\.hei[cf]$/i, ".jpg");
+      return new File([blob], newName, { type: "image/jpeg" });
+    }).catch(function (err) {
+      console.error("HEIC conversion failed, uploading original file instead:", err);
+      return file;
+    });
+  }
+
   function showMsg(el, kind, text) {
     el.hidden = false;
     el.className = "form-msg " + kind;
@@ -618,13 +649,30 @@
 
   function renderPhase(s) {
     var phase = s.phase || "nominations";
+    // "Reopen" fields let you re-run nominate→vote for just one or two
+    // positions (a RON win, a tie needing a runoff, or an uncontested
+    // one with no candidates) without disturbing the rest of the
+    // already-decided results. reopen_phase is 'none' / 'nominations' /
+    // 'voting'; reopened_positions is which position(s); reopened_
+    // candidate_ids optionally restricts voting to specific candidates
+    // (e.g. just the two tied finalists) — leave it empty to allow any
+    // approved candidate for that position, plus RON as always.
+    var reopenPhase = s.reopen_phase || "none";
+    var reopened = s.reopened_positions || [];
+    var reopenedCandidateIds = s.reopened_candidate_ids || [];
 
     if (phase === "nominations") {
       setStage("nominations", "Nominations open" + (s.nominations_close_at ? " — closes " + fmtDate(s.nominations_close_at) : ""));
       document.getElementById("nominate-form-wrap").hidden = false;
+      rebuildPositionDropdown(null);
       document.getElementById("nominate-note").textContent = s.nominations_close_at
         ? "Open to all EISPS students, until " + fmtDate(s.nominations_close_at) + " — you'll need your UCL email address."
         : "Open to all EISPS students — you'll need your UCL email address.";
+    } else if (reopenPhase === "nominations" && reopened.length > 0) {
+      document.getElementById("nominate-form-wrap").hidden = false;
+      rebuildPositionDropdown(reopened);
+      document.getElementById("nominate-note").textContent =
+        "Nominations have reopened for: " + reopened.join(", ") + " — you'll need your UCL email address.";
     } else {
       document.getElementById("nominate-note").textContent = s.nominations_close_at
         ? "Nominations closed " + fmtDate(s.nominations_close_at) + "."
@@ -634,21 +682,30 @@
 
     if (phase === "voting") {
       setStage("voting", "Voting open" + (s.voting_closes_at ? " — closes " + fmtDate(s.voting_closes_at) : ""));
-      loadCandidates(true);
+      document.getElementById("vote-empty").textContent = "Voting isn't open yet.";
+      loadCandidates({ positions: null, candidateIds: null }, false);
     } else if (phase === "results") {
-      setStage("results", "Voting closed");
-      loadCandidates(false);
-      document.getElementById("vote-empty").textContent = "Voting has closed.";
+      var reopenVoting = reopenPhase === "voting" && reopened.length > 0;
+      setStage("results", reopenPhase === "none" ? "Voting closed" : "Voting closed — some positions still in progress");
+      document.getElementById("vote-empty").textContent = reopenVoting
+        ? "No candidates yet for the reopened position(s)."
+        : "Voting has closed.";
+      loadCandidates(
+        reopenVoting ? { positions: reopened, candidateIds: reopenedCandidateIds.length ? reopenedCandidateIds : null } : null,
+        true
+      );
     } else {
-      loadCandidates(false);
+      loadCandidates(null, false);
     }
 
     if (phase === "results") {
       document.getElementById("results-empty").hidden = true;
-      var note = document.createElement("div");
-      note.className = "results-note";
-      note.textContent = s.results_note || "Results are being finalised — check back shortly.";
-      document.getElementById("results-body").appendChild(note);
+      if (s.results_note) {
+        var note = document.createElement("div");
+        note.className = "results-note";
+        note.textContent = s.results_note;
+        document.getElementById("results-body").appendChild(note);
+      }
     }
 
     applyStepDates(s);
@@ -662,11 +719,11 @@
 
     var stepVote = document.getElementById("step-vote-p");
     if (s.voting_opens_at && s.voting_closes_at) {
-      stepVote.textContent = "Candidates are listed below once nominations close. Voting runs from " + fmtDate(s.voting_opens_at) + " to " + fmtDate(s.voting_closes_at) + " — one vote per student.";
+      stepVote.textContent = "Candidates are listed below once nominations close. Voting runs from " + fmtDate(s.voting_opens_at) + " to " + fmtDate(s.voting_closes_at) + " — one vote per student, per position.";
     } else if (s.voting_opens_at) {
-      stepVote.textContent = "Candidates are listed below once nominations close. Voting opens " + fmtDate(s.voting_opens_at) + " — one vote per student.";
+      stepVote.textContent = "Candidates are listed below once nominations close. Voting opens " + fmtDate(s.voting_opens_at) + " — one vote per student, per position.";
     } else if (s.voting_closes_at) {
-      stepVote.textContent = "Candidates are listed below once nominations close. Voting closes " + fmtDate(s.voting_closes_at) + " — one vote per student.";
+      stepVote.textContent = "Candidates are listed below once nominations close. Voting closes " + fmtDate(s.voting_closes_at) + " — one vote per student, per position.";
     }
   }
 
@@ -683,7 +740,7 @@
   // ---------------------------------------------------------------
   var candidatesCache = [];
 
-  function loadCandidates(forVoting) {
+  function loadCandidates(voteOptions, forResults) {
     sb.from("candidates").select("*").eq("approved", true).order("created_at").then(function (res) {
       if (res.error) {
         console.error("loading candidates failed:", res.error);
@@ -691,10 +748,26 @@
       }
       candidatesCache = res.data || [];
       renderDirectory();
-      if (forVoting) loadVoteForm();
+      if (voteOptions) loadVoteForm(voteOptions.positions, voteOptions.candidateIds);
+      if (forResults) renderResults();
     }).catch(function (err) {
       console.error("loading candidates failed:", err);
     });
+  }
+
+  function buildCandCard(c, metaText) {
+    var card = document.createElement("div");
+    card.className = "candcard";
+    var photoHtml = c.photo_path
+      ? '<div class="photo"><img src="' + photoUrl(c.photo_path) + '" alt=""></div>'
+      : '<div class="photo"><span class="initials"></span></div>';
+    card.innerHTML = photoHtml +
+      '<div class="ctext"><span class="cname"></span><span class="cmeta"></span></div>';
+    card.querySelector(".cname").textContent = c.name;
+    card.querySelector(".cmeta").textContent = metaText;
+    var cardInitials = card.querySelector(".initials");
+    if (cardInitials) cardInitials.textContent = initials(c.name);
+    return card;
   }
 
   function renderDirectory() {
@@ -715,18 +788,7 @@
       var dir = document.createElement("div");
       dir.className = "directory";
       group.forEach(function (c) {
-        var card = document.createElement("div");
-        card.className = "candcard";
-        var photoHtml = c.photo_path
-          ? '<div class="photo"><img src="' + photoUrl(c.photo_path) + '" alt=""></div>'
-          : '<div class="photo"><span class="initials"></span></div>';
-        card.innerHTML = photoHtml +
-          '<div class="ctext"><span class="cname"></span><span class="cmeta"></span></div>';
-        card.querySelector(".cname").textContent = c.name;
-        card.querySelector(".cmeta").textContent = c.year_programme || "";
-        var cardInitials = card.querySelector(".initials");
-        if (cardInitials) cardInitials.textContent = initials(c.name);
-        dir.appendChild(card);
+        dir.appendChild(buildCandCard(c, c.year_programme || ""));
       });
       wrap.appendChild(dir);
       body.appendChild(wrap);
@@ -734,12 +796,37 @@
   }
 
   // ---------------------------------------------------------------
+  // Results: one card per position for whoever you've marked as the
+  // winner in Table Editor (candidates.winner = true). Reuses the
+  // same photo-circle/initials card as the Candidates directory, so
+  // there's nothing to type or paste in by hand — just tick the box
+  // for each winning row once you've tallied the votes.
+  // ---------------------------------------------------------------
+  function renderResults() {
+    var body = document.getElementById("results-body");
+    var winners = candidatesCache.filter(function (c) { return c.winner && c.name !== RON_NAME; });
+    if (winners.length === 0) return;
+
+    var grid = document.createElement("div");
+    grid.className = "directory";
+
+    POSITIONS.forEach(function (p) {
+      var winner = winners.filter(function (c) { return c.position === p.key; })[0];
+      if (!winner) return;
+      grid.appendChild(buildCandCard(winner, p.key));
+    });
+
+    body.appendChild(grid);
+  }
+
+  // ---------------------------------------------------------------
   // Voting form: one group per position with candidates, shared
   // email field
   // ---------------------------------------------------------------
-  function loadVoteForm() {
+  function loadVoteForm(allowedPositions, allowedCandidateIds) {
     var body = document.getElementById("vote-body");
     var positionsWithCandidates = POSITIONS.filter(function (p) {
+      if (allowedPositions && allowedPositions.indexOf(p.key) === -1) return false;
       return candidatesCache.some(function (c) { return c.position === p.key; });
     });
 
@@ -774,7 +861,13 @@
     });
 
     positionsWithCandidates.forEach(function (p) {
-      var group = candidatesCache.filter(function (c) { return c.position === p.key; });
+      var group = candidatesCache.filter(function (c) {
+        if (c.position !== p.key) return false;
+        if (allowedCandidateIds && allowedCandidateIds.length > 0) {
+          return c.name === RON_NAME || allowedCandidateIds.indexOf(c.id) !== -1;
+        }
+        return true;
+      });
       group.sort(function (a, b) {
         return (a.name === RON_NAME ? 1 : 0) - (b.name === RON_NAME ? 1 : 0);
       });
@@ -929,15 +1022,17 @@
     }
 
     if (photoFile) {
-      var ext = (photoFile.name.split(".").pop() || "jpg").toLowerCase();
-      var path = email.replace(/[^a-zA-Z0-9]/g, "_") + "-" + Date.now() + "." + ext;
-      sb.storage.from("candidate-photos").upload(path, photoFile).then(function (res) {
-        if (res.error) {
-          console.error("photo upload error:", res.error);
-          insertCandidate(null);
-          return;
-        }
-        insertCandidate(path);
+      normalizePhotoFile(photoFile).then(function (f) {
+        var ext = (f.name.split(".").pop() || "jpg").toLowerCase();
+        var path = email.replace(/[^a-zA-Z0-9]/g, "_") + "-" + Date.now() + "." + ext;
+        return sb.storage.from("candidate-photos").upload(path, f).then(function (res) {
+          if (res.error) {
+            console.error("photo upload error:", res.error);
+            insertCandidate(null);
+            return;
+          }
+          insertCandidate(path);
+        });
       }).catch(function (err) {
         console.error("photo upload failed:", err);
         insertCandidate(null);
