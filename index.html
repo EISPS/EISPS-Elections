@@ -456,8 +456,9 @@
 
   <section class="block" id="positions">
     <h2>Positions</h2>
-    <div class="block-note">Every EISPS year group and route has its own representative.</div>
+    <div class="block-note">Every EISPS year group and route has its own representative. Decided positions move to Results.</div>
     <div class="posgrid" id="posgrid"></div>
+    <div class="empty-note" id="positions-empty" hidden>All positions have been decided — see Results below.</div>
   </section>
 
   <section class="block" id="nominate">
@@ -553,14 +554,28 @@
   // ---------------------------------------------------------------
   var posgrid = document.getElementById("posgrid");
   var nPosition = document.getElementById("n-position");
-  POSITIONS.forEach(function (p) {
-    var card = document.createElement("div");
-    card.className = "poscard";
-    card.innerHTML = '<div class="postitle"></div><p class="posdesc"></p>';
-    card.querySelector(".postitle").textContent = p.key;
-    card.querySelector(".posdesc").textContent = p.desc;
-    posgrid.appendChild(card);
-  });
+
+  // Rebuilds the Positions grid, skipping any position that already has
+  // a winner marked — once decided, it belongs in Results instead of
+  // sitting here taking up space (candidatesCache starts empty before
+  // the first fetch, so everything shows until we know otherwise).
+  function renderPositionsGrid() {
+    posgrid.innerHTML = "";
+    var appended = false;
+    POSITIONS.forEach(function (p) {
+      var decided = (candidatesCache || []).some(function (c) { return c.position === p.key && c.winner; });
+      if (decided) return;
+      appended = true;
+      var card = document.createElement("div");
+      card.className = "poscard";
+      card.innerHTML = '<div class="postitle"></div><p class="posdesc"></p>';
+      card.querySelector(".postitle").textContent = p.key;
+      card.querySelector(".posdesc").textContent = p.desc;
+      posgrid.appendChild(card);
+    });
+    document.getElementById("positions-empty").hidden = appended;
+  }
+  renderPositionsGrid();
 
   // Rebuilds the nomination dropdown. Pass an array to restrict it to
   // just those positions (used when re-opening nominations for one or
@@ -751,6 +766,7 @@
         return;
       }
       candidatesCache = res.data || [];
+      renderPositionsGrid();
       renderDirectory();
       if (voteOptions) loadVoteForm(voteOptions.positions, voteOptions.reopenedMap);
       if (forResults) renderResults();
